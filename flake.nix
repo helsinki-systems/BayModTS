@@ -80,7 +80,7 @@
             repo = pname;
             rev = "v${version}";
             fetchSubmodules = true;
-            hash = "sha256-9G7a17dYui6p01m++/HOCx1qmhLi7Xb588yXfSXNlR4=";
+            hash = "sha256-MF1s7UmZ898OgFZtHW/GgIqh7UG1+dxY7JjstzIzu1M=";
           };
 
           cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" ];
