@@ -1,8 +1,7 @@
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "nixpkgs/nixos-23.11";
-    unstable.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "nixpkgs/nixos-unstable";
     poetry2nix = {
       url = "github:nix-community/poetry2nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -13,7 +12,6 @@
     {
       self,
       nixpkgs,
-      unstable,
       flake-utils,
       poetry2nix,
     }:
@@ -21,7 +19,6 @@
       system:
       let
         pkgs = import nixpkgs { inherit system; };
-        unstablepkgs = import unstable { inherit system; };
         inherit (pkgs) python3;
 
         src = pkgs.nix-gitignore.gitignoreSource [ ] ./.;
@@ -216,9 +213,11 @@
               propagatedBuildInputs = with python3.pkgs; [
                 xmltodict
                 # pydantic
-                # (unstablepkgs.python3.pkgs.pydantic.override { inherit (python3.pkgs) buildPythonPackage; })
-                (python3.pkgs.callPackage "${unstable}/pkgs/development/python-modules/pydantic" { hatchling = python3.pkgs.callPackage "${unstable}/pkgs/development/python-modules/hatchling" { }; })
-                # (python3.pkgs.callPackage "${unstable}/pkgs/development/python-modules/pydantic" { inherit (python3.pkgs) hatchling; })
+                # (pkgs.python3.pkgs.pydantic.override { inherit (python3.pkgs) buildPythonPackage; })
+                (python3.pkgs.callPackage "${nixpkgs}/pkgs/development/python-modules/pydantic" {
+                  hatchling = python3.pkgs.callPackage "${nixpkgs}/pkgs/development/python-modules/hatchling" { };
+                })
+                # (python3.pkgs.callPackage "${nixpkgs}/pkgs/development/python-modules/pydantic" { inherit (python3.pkgs) hatchling; })
                 # (pydantic.overrideAttrs (old: rec {
                 #   version = "2.6.4";
                 #   nativeBuildInputs = old.nativeBuildInputs ++ [
@@ -249,9 +248,7 @@
             hash = "sha256-xtZAagTypAbwTLDv3saaAu7DoJLZ7lWtkUqmqlzhXsE=";
           };
           doCheck = false;
-          nativeBuildInputs = with python3.pkgs; [
-            pip
-          ];
+          nativeBuildInputs = with python3.pkgs; [ pip ];
         };
 
         baymod =
