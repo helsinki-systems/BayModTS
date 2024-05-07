@@ -126,6 +126,10 @@
                 "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
               ];
 
+              # EXPAT_INCLUDE_DIR = "${pkgs.expat.dev}/include";
+              # EXPAT_LIBRARY = "${pkgs.expat.dev}/lib";
+              # doCheck = false;
+
               nativeBuildInputs = [
                 pkgs.cmake
                 pkgs.pkg-config
