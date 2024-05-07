@@ -36,7 +36,18 @@
             });
 
             amici = super.amici.overridePythonAttrs (old: {
-              patches = old.patches or [ ] ++ [ ./ecd6bbbe281f162711e55a1d171b1a945c191bf8.patch ];
+              patches = old.patches or [ ] ++ [
+                (pkgs.fetchpatch {
+                  url = "https://github.com/AMICI-dev/AMICI/commit/ecd6bbbe281f162711e55a1d171b1a945c191bf8.patch";
+                  hash = "sha256-4XFlp7fqDrdwgMjZWbQT7fMmLYPD67cVyNkP2tDmCH8=";
+                })
+              ];
+              prePatch = ''
+                pushd amici
+              '';
+              postPatch = ''
+                popd
+              '';
               nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
                 super.pkgconfig
                 pkgs.boost
@@ -114,8 +125,6 @@
                 "-DPython_LIBRARIES=${python3}/lib"
                 "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
               ];
-
-              patches = [ ./roadrunner.patch ];
 
               nativeBuildInputs = [
                 pkgs.cmake
@@ -208,7 +217,13 @@
                 rev = version;
                 hash = "sha256-AQPdOqBGP888UE6v8Fb8PnzRFvQciDNJUGh2YF99gQo=";
               };
-              patches = [ ./pymetadata.patch ];
+              patches = [
+                (pkgs.fetchpatch {
+                  url = "https://github.com/matthiaskoenig/pymetadata/commit/59a30e4feb6207ce86b2845e40ee54a378e25687.patch";
+                  hash = "sha256-b0cSzngSu8RBWsfIgI4d+QWwjRinhLNSjYbt1SoQuvM=";
+                })
+              ];
+              # Also, maybe the poetry thingy works now: https://github.com/matthiaskoenig/pymetadata/commit/b8f7a0c0b9f5085218cc02daa2e6f8179b9d18a7
               doCheck = false;
               propagatedBuildInputs = with python3.pkgs; [
                 xmltodict
