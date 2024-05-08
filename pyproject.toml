@@ -2,7 +2,7 @@
 name = "baymodts"
 version = "0.1.0"
 description = "Bayesian Modeling of Time Series Data (BayModTS) is a FAIR Bayesian modeling workflow of time series data."
-authors = ["Sebastian Hoepfl <sebastian.hoepfl@isa.uni-stuttgart.de>""]
+authors = ["Sebastian Hoepfl <sebastian.hoepfl@isa.uni-stuttgart.de>"]
 readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
