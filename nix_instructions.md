@@ -57,23 +57,6 @@ nix develop
 # notebooks or you can just test if the python packages are correctly installed
 # using `python -c "import amici"`. This command should not error and then
 # amici is correctly build and in your env, can be used.
-#
-# IMPORTANT:
-# Open Issue: https://github.com/matthiaskoenig/pymetadata/issues/51
-# Because pymetadata writes in the install directory and the nix store is
-# readonly, we need to provide a workaround for this issue. Rather than writing
-# in the install directory of pymetadata we change the directory to a hardcoded
-# `/tmp/pymetadata/` directory, we can later extend this to maybe
-# $HOME/.cache/pymetadata and automatically copy over the required files but we
-# rather do such an change upstream, because currently we only provide a patch
-# file in the build process of pymetadata to achieve this behavior and it still
-# requires some manual steps listed below.
-# So we have to setup these resources in the `/tmp/pymetadata` directory. This
-# can be done using the following commands. Note that this needs to be redone
-# after a restart of the host.
-mkdir -pv /tmp/pymetadata
-git clone -b 0.4.2 https://github.com/matthiaskoenig/pymetadata.git /tmp/pymetadata-src
-cp -vr /tmp/pymetadata-src/src/pymetadata/resources /tmp/pymetadata
 ```
 
 ## Uninstall Nix
