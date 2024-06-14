@@ -395,14 +395,12 @@
 
         pymetadata = py.pkgs.buildPythonPackage rec {
           pname = "pymetadata";
-          version = "0.4.2";
+          version = "0.4.4";
 
           src = py.pkgs.fetchPypi {
             inherit pname version;
-            hash = "sha256-45w0+d5xdVk1xAIklEZosO6CZDEiHuem7A489Grzl/A=";
+            hash = "sha256-puJk10sbbEs+nTVEKYGauPouPGNJ6SPvXRfM7B6iUko=";
           };
-
-          patches = [ ./01-fixpymetadata.patch ];
 
           pythonImportsCheck = [ "pymetadata" ];
 
