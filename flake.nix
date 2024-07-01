@@ -815,6 +815,7 @@
             py.pkgs.isort
             py.pkgs.ipython
             pkgs.jupyter
+            pkgs.cmake
 
             amici
             fides
