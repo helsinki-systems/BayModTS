@@ -843,6 +843,38 @@
             tellurium
           ];
         };
+
+        packages = {
+          inherit
+            h5py
+            libsbml
+            python-libsbml
+            amici
+            fides
+            petab
+            pypesto
+            versioneer-518
+            depinfo
+            fastobo
+            pronto
+            pymetadata
+            antimony
+            libroadrunner-deps
+            roadrunner
+            roadrunner-python
+            libroadrunner
+            py2cytoscape
+            sbmlutils
+            zipper
+            libnuml
+            python-libnuml
+            libsedml
+            python-libsedml
+            libcombine
+            python-libcombine
+            tellurium
+            ;
+        };
       }
     );
 }
