@@ -1,7 +1,7 @@
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
   };
 
   # This allows us to use the garnix binary cache which the GitHub CI job
@@ -22,138 +22,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
-        py = pkgs.python3.override {
-          packageOverrides = _selfPy: superPy: {
-            pydantic-core = superPy.buildPythonPackage rec {
-              pname = "pydantic-core";
-              version = "2.16.3";
-              pyproject = true;
-
-              src = pkgs.fetchFromGitHub {
-                owner = "pydantic";
-                repo = "pydantic-core";
-                rev = "refs/tags/v${version}";
-                hash = "sha256-RXytujvx/23Z24TWpvnHdjJ4/dXqjs5uiavUmukaD9A=";
-              };
-
-              # patches = [
-              #   ./01-remove-benchmark-flags.patch
-              # ];
-
-              cargoDeps = pkgs.rustPlatform.fetchCargoTarball {
-                inherit src;
-                name = "${pname}-${version}";
-                hash = "sha256-wj9u6s/3E3EWfQydkLrwHbJBvm8DwcGCoQQpSw1+q7U=";
-              };
-
-              nativeBuildInputs = [
-                pkgs.rustPackages_1_76.cargo
-                pkgs.rustPackages_1_76.rustPlatform.cargoSetupHook
-                pkgs.rustPackages_1_76.rustc
-                (pkgs.rustPackages_1_76.rustPlatform.maturinBuildHook.overrideAttrs (_: {
-                  propagatedBuildInputs = [
-                    pkgs.maturin
-                    pkgs.rustPackages_1_76.cargo
-                    pkgs.rustPackages_1_76.rustc
-                  ];
-                }))
-                superPy.typing-extensions
-              ];
-
-              buildInputs = [ pkgs.libiconv ];
-
-              propagatedBuildInputs = [ superPy.typing-extensions ];
-
-              pythonImportsCheck = [ "pydantic_core" ];
-
-              # escape infinite recursion with pydantic via dirty-equals
-              doCheck = false;
-            };
-
-            pydantic-settings = superPy.buildPythonPackage rec {
-              pname = "pydantic-settings";
-              version = "2.2.1";
-              pyproject = true;
-
-              src = pkgs.fetchFromGitHub {
-                owner = "pydantic";
-                repo = "pydantic-settings";
-                rev = "refs/tags/v${version}";
-                hash = "sha256-4o8LlIFVizoxb484lVT67e24jhtUl49otr1lX/2zZ4M=";
-              };
-
-              nativeBuildInputs = [ superPy.hatchling ];
-
-              propagatedBuildInputs = [
-                py.pkgs.pydantic
-                superPy.python-dotenv
-              ];
-
-              pythonImportsCheck = [ "pydantic_settings" ];
-
-              # ruff is a dependency of pytest-examples which is required to run the tests.
-              # We do not want all of the downstream packages that depend on pydantic-settings to also depend on ruff.
-              doCheck = false;
-            };
-
-            pydantic-extra-types = superPy.buildPythonPackage rec {
-              pname = "pydantic-extra-types";
-              version = "2.6.0";
-              pyproject = true;
-
-              src = pkgs.fetchFromGitHub {
-                owner = "pydantic";
-                repo = "pydantic-extra-types";
-                rev = "refs/tags/v${version}";
-                hash = "sha256-XLVhoZ3+TfVYEuk/5fORaGpCBaB5NcuskWhHgt+llS0=";
-              };
-
-              nativeBuildInputs = [ superPy.hatchling ];
-
-              propagatedBuildInputs = [ py.pkgs.pydantic ];
-
-              pythonImportsCheck = [ "pydantic_extra_types" ];
-              doCheck = false;
-            };
-
-            pydantic = superPy.buildPythonPackage rec {
-              pname = "pydantic";
-              version = "2.6.3";
-              pyproject = true;
-
-              src = pkgs.fetchFromGitHub {
-                owner = "pydantic";
-                repo = "pydantic";
-                rev = "refs/tags/v${version}";
-                hash = "sha256-neTdG/IcXopCmevzFY5/XDlhPHmOb6dhyAnzaobmeG8=";
-              };
-
-              patches = [
-                (pkgs.fetchpatch2 {
-                  # https://github.com/pydantic/pydantic/pull/8678
-                  name = "fix-pytest8-compatibility.patch";
-                  url = "https://github.com/pydantic/pydantic/commit/825a6920e177a3b65836c13c7f37d82b810ce482.patch";
-                  hash = "sha256-Dap5DtDzHw0jS/QUo5CRI9sLDJ719GRyC4ZNDWEdzus=";
-                })
-              ];
-
-              buildInputs = [ pkgs.libxcrypt ];
-
-              nativeBuildInputs = [
-                superPy.hatch-fancy-pypi-readme
-                superPy.hatchling
-              ];
-
-              propagatedBuildInputs = [
-                superPy.annotated-types
-                py.pkgs.pydantic-core
-                superPy.typing-extensions
-              ];
-
-              pythonImportsCheck = [ "pydantic" ];
-            };
-          };
-        };
+        py = pkgs.python3;
 
         h5py = py.pkgs.h5py.overridePythonAttrs (oA: rec {
           version = "3.8.0";
@@ -162,6 +31,20 @@
             inherit version;
             hash = "sha256-b+rYLwxAAM841T+cAweA2Bv6AiAhiu4TuQt3Ack32V8=";
           };
+
+          patches = [];
+          postPatch = ''
+            substituteInPlace setup.py \
+              --replace "mpi4py ==" "mpi4py >="
+          '';
+
+          nativeBuildInputs = [
+            py.pkgs.cython_0
+            py.pkgs.oldest-supported-numpy
+            py.pkgs.pkgconfig
+            py.pkgs.setuptools
+            py.pkgs.wheel
+          ];
         });
 
         libsbml = pkgs.stdenv.mkDerivation rec {
@@ -450,7 +333,7 @@
           doCheck = false;
         };
 
-        libroadrunner-deps = pkgs.stdenv.mkDerivation rec {
+        libroadrunner-deps = pkgs.gcc12Stdenv.mkDerivation rec {
           pname = "libroadrunner-deps";
           version = "2.1";
 
@@ -477,7 +360,7 @@
           enableParallelBuilding = true;
         };
 
-        roadrunner = pkgs.stdenv.mkDerivation rec {
+        roadrunner = pkgs.gcc12Stdenv.mkDerivation rec {
           version = "2.6.0";
           pname = "roadrunner";
 
@@ -600,13 +483,8 @@
 
             py.pkgs.matplotlib
 
-            (py.pkgs.fastapi.overridePythonAttrs (oA: {
-              propagatedBuildInputs = oA.propagatedBuildInputs ++ [
-                py.pkgs.pydantic-settings
-                py.pkgs.pydantic-extra-types
-              ];
-              doCheck = false;
-            }))
+            py.pkgs.fastapi
+            py.pkgs.fastapi.optional-dependencies.all
             py.pkgs.uvicorn
             py.pkgs.python-multipart
             py2cytoscape
