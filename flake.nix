@@ -22,8 +22,12 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
-        py = pkgs.python3.override {
+        py = pkgs.python39.override {
           packageOverrides = _selfPy: superPy: {
+            tenacity = superPy.tenacity.overridePythonAttrs {
+              propagatedBuildInputs = [ superPy.importlib-metadata ];
+            };
+
             pydantic-core = superPy.buildPythonPackage rec {
               pname = "pydantic-core";
               version = "2.16.3";
@@ -182,7 +186,7 @@
             py.pkgs.pythonImportsCheckHook
           ];
           buildInputs = [
-            pkgs.swig
+            pkgs.swig4
             pkgs.expat
             pkgs.bzip2
             pkgs.zlib
@@ -219,7 +223,7 @@
 
           nativeBuildInputs = [
             # py.pkgs.pip
-            pkgs.swig
+            pkgs.swig4
           ];
 
           propagatedBuildInputs = [
@@ -661,7 +665,7 @@
           ];
 
           buildInputs = [
-            pkgs.swig
+            pkgs.swig4
             libsbml
             pkgs.expat
             pkgs.bzip2
@@ -705,7 +709,7 @@
           ];
 
           buildInputs = [
-            pkgs.swig
+            pkgs.swig4
             libsbml
             libnuml
             pkgs.expat
@@ -750,7 +754,7 @@
           ];
 
           buildInputs = [
-            pkgs.swig
+            pkgs.swig4
             libsbml
             pkgs.expat
             pkgs.bzip2
@@ -831,7 +835,7 @@
             pypesto
 
             # maybe propagate
-            pkgs.swig
+            pkgs.swig4
             pkgs.blas
             pkgs.pkg-config
 
