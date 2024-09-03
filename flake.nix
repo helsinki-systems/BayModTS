@@ -21,6 +21,7 @@
       system:
       let
         pkgs = import nixpkgs { inherit system; };
+        lib = pkgs.lib;
 
         py = pkgs.python39.override {
           packageOverrides = _selfPy: superPy: {
@@ -170,13 +171,13 @@
 
         libsbml = pkgs.stdenv.mkDerivation rec {
           pname = "libsbml";
-          version = "5.20.2";
+          version = "5.19.7";
 
           src = pkgs.fetchFromGitHub {
             owner = "sbmlteam";
             repo = "libsbml";
             rev = "v${version}";
-            hash = "sha256-8JT2r0zuf61VewtZaOAccaOUmDlQPnllA0fXE9rT5X8=";
+            hash = "sha256-1sa5kR1ieKZc/DCInuMeOX2V0cJCIdMKciPddLxEZ7c=";
           };
 
           hardeningDisable = [ "format" ];
@@ -197,6 +198,8 @@
             "-DWITH_PYTHON=ON"
             "-DWITH_EXPAT=ON"
             "-DWITH_STABLE_PACKAGES=ON"
+            "-DPKG_CONFIG_EXECUTABLE=${lib.getBin pkgs.pkg-config}/bin/pkg-config"
+            "-DSWIG_EXECUTABLE=${lib.getBin pkgs.swig4}/bin/swig"
           ];
 
           postInstall = ''
@@ -223,7 +226,7 @@
 
           nativeBuildInputs = [
             # py.pkgs.pip
-            pkgs.swig4
+            pkgs.swig
           ];
 
           propagatedBuildInputs = [
@@ -526,7 +529,7 @@
             py.pkgs.matplotlib
             libroadrunner-deps
             pkgs.llvm_13
-            pkgs.swig4
+            pkgs.swig
           ];
 
           enableParallelBuilding = true;
@@ -665,7 +668,7 @@
           ];
 
           buildInputs = [
-            pkgs.swig4
+            pkgs.swig
             libsbml
             pkgs.expat
             pkgs.bzip2
@@ -709,7 +712,7 @@
           ];
 
           buildInputs = [
-            pkgs.swig4
+            pkgs.swig
             libsbml
             libnuml
             pkgs.expat
@@ -754,7 +757,7 @@
           ];
 
           buildInputs = [
-            pkgs.swig4
+            pkgs.swig
             libsbml
             pkgs.expat
             pkgs.bzip2
@@ -835,7 +838,7 @@
             pypesto
 
             # maybe propagate
-            pkgs.swig4
+            pkgs.swig
             pkgs.blas
             pkgs.pkg-config
 
