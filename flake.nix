@@ -23,7 +23,7 @@
         pkgs = import nixpkgs { inherit system; };
         lib = pkgs.lib;
 
-        py = pkgs.python39.override {
+        py = pkgs.python3.override {
           packageOverrides = _selfPy: superPy: {
             tenacity = superPy.tenacity.overridePythonAttrs {
               propagatedBuildInputs = [ superPy.importlib-metadata ];
@@ -157,6 +157,14 @@
 
               pythonImportsCheck = [ "pydantic" ];
             };
+
+            fastapi = superPy.fastapi.overridePythonAttrs (oA: {
+              propagatedBuildInputs = oA.propagatedBuildInputs ++ [
+                py.pkgs.pydantic-settings
+                py.pkgs.pydantic-extra-types
+              ];
+              doCheck = false;
+            });
           };
         };
 
@@ -171,13 +179,13 @@
 
         libsbml = pkgs.stdenv.mkDerivation rec {
           pname = "libsbml";
-          version = "5.19.7";
+          version = "5.20.4";
 
           src = pkgs.fetchFromGitHub {
             owner = "sbmlteam";
             repo = "libsbml";
             rev = "v${version}";
-            hash = "sha256-1sa5kR1ieKZc/DCInuMeOX2V0cJCIdMKciPddLxEZ7c=";
+            hash = "sha256-qWTN033YU4iWzt+mXQaP5W/6IF5nebF4PwNVkyL8wTg=";
           };
 
           hardeningDisable = [ "format" ];
@@ -210,43 +218,100 @@
         };
         python-libsbml = py.pkgs.toPythonModule libsbml;
 
+        cmake-build-extension = py.pkgs.buildPythonPackage rec {
+          pname = "cmake-build-extension";
+          version = "0.6.0";
+
+          src = pkgs.fetchFromGitHub {
+            owner = "diegoferigo";
+            repo = "cmake-build-extension";
+            rev = "v${version}";
+            hash = "sha256-SrdzzEADu7lGYFbcBBSmYf+7gHMT0rZNSw4N6hHuU/M=";
+            leaveDotGit = true;
+          };
+
+          nativeBuildInputs = [
+            pkgs.cmake
+            pkgs.git
+            py.pkgs.setuptools
+            py.pkgs.setuptools_scm
+          ];
+
+          propagatedBuildInputs = [
+            py.pkgs.cmake
+            py.pkgs.ninja
+            py.pkgs.gitpython
+            py.pkgs.setuptools_scm
+          ];
+
+          pythonImportsCheck = [ "cmake_build_extension" ];
+          doCheck = false;
+          dontUseCmakeConfigure = true;
+        };
+
         amici = py.pkgs.buildPythonPackage rec {
           pname = "amici";
-          version = "0.16.0";
+          version = "0.26.1";
 
           src = py.pkgs.fetchPypi {
             inherit pname version;
-            hash = "sha256-Gi1mM+w0JB2Ni0ltGNQxhILP/hJend88psrF020jXzg=";
+            hash = "sha256-Lfw+GilB6y9T7u8hdbAPmJYiO5h9v4rinzfizIw3At0=";
           };
+
+          postPatch = ''
+            substituteInPlace amici/sbml_import.py \
+              --replace-fail "element_name" "getElementName()"
+          '';
 
           env = {
             BLAS_CFLAGS = "-I${pkgs.blas.dev}/include";
             BLAS_LIBS = "-L${pkgs.blas}/lib -lcblas";
+            HDF5_ROOT = "${pkgs.symlinkJoin {
+              name = "hdf5";
+              paths = [
+                pkgs.hdf5-cpp.dev
+                pkgs.hdf5-cpp.out
+              ];
+            }}";
+            # BOOST_ROOT = "${pkgs.symlinkJoin {
+            #   name = "boost";
+            #   paths = [
+            #     pkgs.boost.dev
+            #     pkgs.boost.out
+            #   ];
+            # }}";
           };
 
           nativeBuildInputs = [
             # py.pkgs.pip
+            pkgs.cmake
             pkgs.swig
+            cmake-build-extension
+            py.pkgs.setuptools
+            pkgs.hdf5-cpp
+            # pkgs.boost
           ];
 
           propagatedBuildInputs = [
+            cmake-build-extension
+            py.pkgs.cmake
             py.pkgs.sympy
             py.pkgs.numpy
             python-libsbml
-            h5py
             py.pkgs.pandas
-            py.pkgs.pkgconfig
-            py.pkgs.wurlitzer
+            py.pkgs.pyarrow
             py.pkgs.toposort
             py.pkgs.mpmath
 
             # optional
             petab
+            h5py
             # pysb
           ];
 
           pythonImportsCheck = [ "amici" ];
           doCheck = false;
+          dontUseCmakeConfigure = true;
         };
 
         fides = py.pkgs.buildPythonPackage rec {
@@ -271,11 +336,11 @@
 
         petab = py.pkgs.buildPythonPackage rec {
           pname = "petab";
-          version = "0.1.30";
+          version = "0.4.1";
 
           src = py.pkgs.fetchPypi {
             inherit pname version;
-            hash = "sha256-Tc74582cvUhbVnQAHU2PSORmkqZmJM0YvBbVI25TwFg=";
+            hash = "sha256-+t5c7M4OGyDAPPBXiLs9hHwcJncIKP3HoRFXQDctsYc=";
           };
 
           pythonImportsCheck = [ "petab" ];
@@ -283,13 +348,30 @@
           propagatedBuildInputs = [
             py.pkgs.numpy
             py.pkgs.pandas
-            py.pkgs.matplotlib
+            py.pkgs.pyarrow
             python-libsbml
             py.pkgs.sympy
             py.pkgs.colorama
-            py.pkgs.seaborn
             py.pkgs.pyyaml
             py.pkgs.jsonschema
+            (py.pkgs.antlr4-python3-runtime.overridePythonAttrs (_: rec {
+              version = "4.13.1";
+
+              source = pkgs.fetchFromGitHub {
+                owner = "antlr";
+                repo = "antlr4";
+                rev = version;
+                hash = "sha256-ky9nTDaS+L9UqyMsGBz5xv+NY1bPavaSfZOeXO1geaA=";
+              };
+            }))
+
+            # optional combine
+            python-libcombine
+
+            # optional vis
+            py.pkgs.matplotlib
+            py.pkgs.seaborn
+            py.pkgs.scipy
           ];
 
           doCheck = false;
@@ -297,11 +379,11 @@
 
         pypesto = py.pkgs.buildPythonPackage rec {
           pname = "pypesto";
-          version = "0.2.15";
+          version = "0.5.1";
 
           src = py.pkgs.fetchPypi {
             inherit pname version;
-            hash = "sha256-i3jDaul1xMXABBnatanN6SzqRwQK/BoD7kNeuZy+76M=";
+            hash = "sha256-ck+xsBuYEbYbmsERAcqSLuIKvqcRiU1csv51hI9+8pU=";
           };
 
           pythonImportsCheck = [ "pypesto" ];
@@ -317,6 +399,7 @@
             h5py
             py.pkgs.tqdm
             py.pkgs.tabulate
+            petab
           ];
 
           doCheck = false;
@@ -820,6 +903,88 @@
             py.pkgs.ipykernel
           ];
         };
+
+        swiglpk = py.pkgs.buildPythonPackage rec {
+          pname = "swiglpk";
+          version = "5.0.10";
+
+          src = py.pkgs.fetchPypi {
+            inherit pname version;
+            hash = "sha256-V6w0rTNNqV3RaBFL/bUK4Qoqaj3e8h5JQfRv5DDFp+E=";
+          };
+
+          nativeBuildInputs = [
+            pkgs.pkg-config
+            pkgs.swig
+          ];
+
+          buildInputs = [
+            pkgs.glpk
+          ];
+
+          env = {
+            GLPK_HEADER_PATH = "${pkgs.glpk}/include";
+          };
+
+          propagatedBuildInputs = [
+            py.pkgs.requests
+          ];
+
+          pythonImportsCheck = [ "swiglpk" ];
+          doCheck = false;
+        };
+
+        optlang = py.pkgs.buildPythonPackage rec {
+          pname = "optlang";
+          version = "1.8.2";
+
+          src = py.pkgs.fetchPypi {
+            inherit pname version;
+            hash = "sha256-UiFb11wmUpn0ULuQSokKkZkkRv/2aNj46Ylor7y1kck=";
+          };
+
+          propagatedBuildInputs = [
+            py.pkgs.sympy
+            swiglpk
+          ];
+
+          # no tests available
+          pythonImportsCheck = [ "optlang" ];
+          doCheck = false;
+        };
+
+        cobrapy = py.pkgs.buildPythonPackage rec {
+          pname = "cobrapy";
+          version = "0.29.0";
+
+          src = pkgs.fetchFromGitHub {
+            owner = "opencobra";
+            repo = pname;
+            rev = version;
+            hash = "sha256-kHgp9sZtFRRoyLJ9c6+QvYpjvzqY37HofmgHpTeRjdQ=";
+          };
+
+          propagatedBuildInputs = [
+            py.pkgs.appdirs
+            depinfo
+            py.pkgs.diskcache
+            py.pkgs.future
+            py.pkgs.httpx
+            py.pkgs.importlib-resources
+            py.pkgs.numpy
+            optlang
+            py.pkgs.pandas
+            py.pkgs.pydantic
+            python-libsbml
+            py.pkgs.rich
+            py.pkgs.ruamel-yaml
+            swiglpk
+          ];
+
+          # no tests available
+          # pythonImportsCheck = [ "cobra" ];
+          doCheck = false;
+        };
       in
       {
         devShells.default = pkgs.mkShell {
@@ -848,7 +1013,18 @@
 
             sbmlutils
             tellurium
+            cobrapy
           ];
+
+          env = {
+            HDF5_ROOT = "${pkgs.symlinkJoin {
+              name = "hdf5";
+              paths = [
+                pkgs.hdf5-cpp.dev
+                pkgs.hdf5-cpp.out
+              ];
+            }}";
+          };
         };
 
         packages = {
@@ -880,6 +1056,7 @@
             libcombine
             python-libcombine
             tellurium
+            cobrapy
             ;
         };
       }
